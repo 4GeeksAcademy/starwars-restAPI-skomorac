@@ -47,15 +47,20 @@ def get_all_items():
     serialized_items = [item.serialize() for item in items]
     return jsonify(serialized_items), 200
 
-@app.route('/people/<int:person_id>', methods=['GET'])
-def get_person(person_id):
+@app.route('/<model>/<int:item_id>', methods=['GET'])
+def get_item(model, item_id):
+    if model == 'people':
+        item = People.query.get(item_id)
+    elif model == 'planets':
+        item = Planets.query.get(item_id)
+    else:
+        return jsonify({"error": "Invalid model name"}), 400
+    
+    if item is None:
+        return jsonify({"error": f"{model.capitalize()} with id {item_id} doesn't exist"}), 404
 
-    person = People.query.get(person_id)
-    if person is None:
-        return "Person with id: " + str(person_id) + " doesn't exists", 400
-    one_person = person.serialize()
-
-    return jsonify(one_person), 200
+    serialized_item = item.serialize()
+    return jsonify(serialized_item), 200
 
 
 @app.route('/people', methods=['POST'])
@@ -83,6 +88,34 @@ def create_person():
     db.session.commit()
 
     return jsonify({"msg": "New Person is created"}), 201
+
+
+@app.route('/planets', methods=['POST'])
+def create_planet():
+
+    new_planet = request.get_json()
+
+    if 'name' not in new_planet:
+        return "Name cannot be empty", 400
+    
+
+    new_planet = Planets(
+        name = new_planet['name'], 
+        diameter = new_planet['diameter'],
+        rotation_period = new_planet['rotation_period'],
+        orbital_period = new_planet['orbital_period'],
+        gravity = new_planet['gravity'],
+        population = new_planet['population'],
+        climate = new_planet['climate'],
+        terrain = new_planet['terrain'],
+    )
+
+    db.session.add(new_planet)
+    db.session.commit()
+
+    return jsonify({"msg": "New Planet is created"}), 201
+
+
 
 
 @app.route('/people/<int:person_id>', methods=['PUT'])
@@ -126,18 +159,64 @@ def update_person(person_id):
     return jsonify({"msg": "Person is updated"}), 200
 
 
-@app.route('/people/<int:person_id>', methods=['DELETE'])
-def delete_person(person_id):
-    person_to_delete = People.query.get(person_id)
+@app.route('/planets/<int:planet_id>', methods=['PUT'])
+def update_planet(planet_id):
+    updated_planet = request.get_json()
+    old_planet = Planets.query.get(planet_id)
 
-    if person_to_delete is None:
-        return "Person with id: " + str(person_id) + " doesn't exists", 400
+    if old_planet is None:
+        return "Planet with id: " + str(planet_id) + " doesn't exist", 400 
     
-    db.session.delete(person_to_delete)
+    if 'name' in updated_planet:
+        old_planet.name = updated_planet['name']
+
+    if 'diameter' in updated_planet:
+        old_planet.diameter = updated_planet['diameter']
+
+    if 'rotation_period' in updated_planet:
+        old_planet.rotation_period = updated_planet['rotation_period']
+
+    if 'orbital_period' in updated_planet:
+        old_planet.orbital_period = updated_planet['orbital_period']
+
+    if 'gravity' in updated_planet:
+        old_planet.gravity = updated_planet['gravity']
+
+    if 'population' in updated_planet:
+        old_planet.population = updated_planet['population']
+
+    if 'climate' in updated_planet:
+        old_planet.climate = updated_planet['climate']
+
+    if 'terrain' in updated_planet:
+        old_planet.terrain = updated_planet['terrain']
+
     db.session.commit()
 
-    return jsonify({"msg": "Person is deleted"}, 200)
-        
+    return jsonify({"msg": "Planet is updated"}), 200
+
+
+
+
+@app.route('/<model>/<int:item_id>', methods=['DELETE'])
+def delete_item(model, item_id):
+    if model == 'people':
+        item_to_delete = People.query.get(item_id)
+    elif model == 'planets':
+        item_to_delete = Planets.query.get(item_id)
+    else:
+        return jsonify({"error": "Invalid model name"}), 400
+
+    if item_to_delete is None:
+        return jsonify({"error": f"{model.capitalize()} with id {item_id} doesn't exist"}), 404
+    
+    db.session.delete(item_to_delete)
+    db.session.commit()
+
+    return jsonify({"msg": f"{model.capitalize()} is deleted"}), 200
+
+
+
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
