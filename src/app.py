@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, People, Planets
+from models import db, People, Planets, User
 #from models import Person
 
 app = Flask(__name__)
@@ -36,13 +36,17 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/people', methods=['GET'])
+@app.route('/user', methods=['GET'])
 @app.route('/planets', methods=['GET'])
+@app.route('/people', methods=['GET'])
+
 def get_all_items():
     if request.path == '/people':
         items = People.query.all()
     elif request.path == '/planets':
         items = Planets.query.all()
+    elif request.path == '/user':
+        items = User.query.all()
 
     serialized_items = [item.serialize() for item in items]
     return jsonify(serialized_items), 200
@@ -53,6 +57,8 @@ def get_item(model, item_id):
         item = People.query.get(item_id)
     elif model == 'planets':
         item = Planets.query.get(item_id)
+    elif model == 'user':
+        item = User.query.get(item_id)
     else:
         return jsonify({"error": "Invalid model name"}), 400
     
@@ -115,6 +121,25 @@ def create_planet():
 
     return jsonify({"msg": "New Planet is created"}), 201
 
+
+@app.route('/user', methods=['POST'])
+def create_user():
+
+    new_user = request.get_json()
+
+    if 'name' not in new_user:
+        return "Name cannot be empty", 400
+    
+
+    new_user = User(
+        name = new_user['name'], 
+        age = new_user['age'],
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"msg": "New User is created"}), 201
 
 
 
@@ -195,6 +220,24 @@ def update_planet(planet_id):
 
     return jsonify({"msg": "Planet is updated"}), 200
 
+
+@app.route('/user/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    updated_user = request.get_json()
+    old_user = User.query.get(user_id)
+
+    if old_user is None:
+        return "User with id: " + str(user_id) + " doesn't exist", 400 
+    
+    if 'name' in updated_user:
+        old_user.name = updated_user['name']
+
+    if 'age' in updated_user:
+        old_user.age = updated_user['age']
+
+    db.session.commit()
+
+    return jsonify({"msg": "User is updated"}), 200
 
 
 

@@ -61,5 +61,20 @@ class Planets(db.Model):
             "population": self.population,
             "climate": self.climate,
             "terrain": self.terrain,
-            # do not serialize the password, its a security breach
         }
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False, unique=True)
+    age = db.Column(db.Integer)
+
+    def __repr__(self):
+        return '<User %r>' % self.name
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "age": self.age,
+        }
+
