@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -13,6 +14,8 @@ class People(db.Model):
     birth_year = db.Column(db.String(100))
     gender = db.Column(db.String(100))
     homeworld = db.Column(db.String(250))
+
+    favorites = db.relationship('Favorites', back_populates='person')
 
 
 
@@ -45,6 +48,8 @@ class Planets(db.Model):
     climate = db.Column(db.String(100))
     terrain = db.Column(db.String(100))
 
+    favorites = db.relationship('Favorites', back_populates='planet')
+
 
 
     def __repr__(self):
@@ -68,6 +73,8 @@ class User(db.Model):
     name = db.Column(db.String(250), nullable=False, unique=True)
     age = db.Column(db.Integer)
 
+    favorites = db.relationship('Favorites', back_populates='user')
+
     def __repr__(self):
         return '<User %r>' % self.name
     
@@ -78,3 +85,23 @@ class User(db.Model):
             "age": self.age,
         }
 
+class Favorites(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    person_id = db.Column(db.Integer, db.ForeignKey('people.id'))
+    planet_id = db.Column(db.Integer, db.ForeignKey('planets.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    # Relationships
+    user = db.relationship('User', back_populates='favorites')
+    person = db.relationship('People', back_populates='favorites')
+    planet = db.relationship('Planets', back_populates='favorites')
+
+    def __repr__(self):
+        return '<Favorites %r>' % self.id
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+        }

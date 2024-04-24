@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, People, Planets, User
+from models import db, People, Planets, User, Favorites
 #from models import Person
 
 app = Flask(__name__)
@@ -36,6 +36,7 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+@app.route('/favorites', methods=['GET'])
 @app.route('/user', methods=['GET'])
 @app.route('/planets', methods=['GET'])
 @app.route('/people', methods=['GET'])
@@ -47,6 +48,8 @@ def get_all_items():
         items = Planets.query.all()
     elif request.path == '/user':
         items = User.query.all()
+    elif request.path == '/favorites':
+        items = Favorites.query.all()
 
     serialized_items = [item.serialize() for item in items]
     return jsonify(serialized_items), 200
