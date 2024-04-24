@@ -124,22 +124,24 @@ def create_planet():
 
 @app.route('/user', methods=['POST'])
 def create_user():
+    new_user_data = request.get_json()
 
-    new_user = request.get_json()
+    if 'name' not in new_user_data:
+        return jsonify({"error": "Name is required"}), 400
 
-    if 'name' not in new_user:
-        return "Name cannot be empty", 400
-    
+    username = new_user_data['name']
 
-    new_user = User(
-        name = new_user['name'], 
-        age = new_user['age'],
-    )
+    # Check if the username already exists
+    existing_user = User.query.filter_by(name=username).first()
+    if existing_user:
+        return jsonify({"error": "Username already exists"}), 400
+
+    new_user = User(name=username, age=new_user_data.get('age'))
 
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"msg": "New User is created"}), 201
+    return jsonify({"msg": "New User created"}), 201
 
 
 
